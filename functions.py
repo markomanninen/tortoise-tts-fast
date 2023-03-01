@@ -38,6 +38,9 @@ except:
     from ipywidgets import FileUpload
     from IPython.display import display
 
+# This will download all the models used by Tortoise from the HuggingFace hub.
+tts = TextToSpeech()
+
 from numba import cuda
 
 def check_gpu():
@@ -152,7 +155,7 @@ def load_my_voice(voice, reload = False):
             
 
 def text2speech(text, section_name, voice = "marko", preset = "fast", append_next = False, append_prev = False):
-    global drive_colab_tts_dir, is_colab
+    global drive_colab_tts_dir, is_colab, tts
 
     drive_colab_tts_voice_dir = f"{drive_colab_tts_dir}/{voice}"
 
