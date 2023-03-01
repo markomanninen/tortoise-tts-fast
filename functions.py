@@ -113,7 +113,7 @@ def load_my_voice(voice, reload = False):
         except Exception as e:
             print(e)
     else:
-        print("Tortoise voices", os.listdir(custom_voice_folder))
+        print("GDrive not available. Working with local Tortoise voices only", os.listdir(custom_voice_folder))
 
     # if force load new voices or the given voice has no files
     if reload or os.listdir(custom_voice_folder) == []:
