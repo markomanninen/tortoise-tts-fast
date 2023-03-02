@@ -3,45 +3,52 @@ import torchaudio, IPython
 from tortoise.api import TextToSpeech
 from tortoise.utils.audio import load_voice
 from pydub import AudioSegment
-
-import locale
-
-# pydub requires UTF-8
-def getpreferredencoding(do_setlocale = True):
-    return "UTF-8"
-
-if locale.getpreferredencoding() != 'UTF-8':
-    print(locale.getpreferredencoding(), '->')
-    locale.getpreferredencoding = getpreferredencoding
-
-print(locale.getpreferredencoding())
-
 from zipfile import ZipFile
 from glob import glob
+from numba import cuda
 import os, shutil
+import locale
 
+# can we use a mounted gdrive in colab environment for back ups?
 is_colab = False
+
+# pydub requires UTF-8
+# this is initialized by init function
+def getpreferredencoding(do_setlocale = True):
+    return "UTF-8"
 
 # if directory does not exist, new ones will be created
 # directory sub structure will be: colab_tts_files/{voiceid}/voices/
 drive_colab_tts_dir = f"/content/drive/MyDrive/colab_tts_files"
 
-try:
-    from google.colab import drive
-    from google.colab import files
+def load_gdrive():
+    global is_colab
+    try:
+        from google.colab import drive
+        from google.colab import files
 
-    # for back-upping files, this will pop up a google access grant window!
-    drive.mount('/content/drive')
-    
-    is_colab = True
-except:
-    from ipywidgets import FileUpload
-    from IPython.display import display
+        # for back-upping files, this will pop up a google access grant window!
+        drive.mount('/content/drive')
 
+        is_colab = True
+    except Exception as e:
+        from ipywidgets import FileUpload
+        from IPython.display import display
+        print("Could not mount GDrive", e)
+
+tts = None
 # This will download all the models used by Tortoise from the HuggingFace hub.
-tts = TextToSpeech()
+def init():
+    global tts
+    if locale.getpreferredencoding() != 'UTF-8':
+        print(locale.getpreferredencoding(), '->')
+        locale.getpreferredencoding = getpreferredencoding
 
-from numba import cuda
+    print(locale.getpreferredencoding())
+    
+    check_gpu()
+    
+    tts = TextToSpeech()
 
 def check_gpu():
     cc_cores_per_SM_dict = {(2,0) : 32, (2,1) : 48, (3,0) : 192, (3,5) : 192, (3,7) : 192, (5,0) : 128, (5,2) : 128, (6,0) : 64, (6,1) : 128, (7,0) : 64, (7,5) : 64, (8,0) : 64, (8,6) : 128, (8,9) : 128, (9,0) : 128 }
