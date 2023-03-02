@@ -17,6 +17,13 @@ is_colab = False
 def getpreferredencoding(do_setlocale = True):
     return "UTF-8"
 
+def list_voices():
+    directory_list = list()
+    for root, dirs, files in os.walk("tortoise/voices/", topdown=False):
+        for name in dirs:
+            directory_list.append(name)
+    print(directory_list)
+
 # if directory does not exist, new ones will be created
 # directory sub structure will be: colab_tts_files/{voiceid}/voices/
 drive_colab_tts_dir = f"/content/drive/MyDrive/colab_tts_files"
