@@ -12,6 +12,9 @@ import locale
 # can we use a mounted gdrive in colab environment for back ups?
 is_colab = False
 
+# files handle for loading files in colab
+files = None
+
 # pydub requires UTF-8
 # this is initialized by init function
 def getpreferredencoding(do_setlocale = True):
@@ -40,7 +43,7 @@ def list_voices():
 drive_colab_tts_dir = f"/content/drive/MyDrive/colab_tts_files"
 
 def load_gdrive():
-    global is_colab
+    global is_colab, files
     try:
         from google.colab import drive
         from google.colab import files
@@ -97,7 +100,7 @@ def remove_old_files(path):
 # Upload at least 2 audio clips, which must be a WAV file, 6-10 seconds long.
 
 def load_my_voice(voice, reload = False):
-    global drive_colab_tts_dir, is_colab
+    global drive_colab_tts_dir, is_colab, files
 
     custom_voice_folder = f"tortoise/voices/{voice}"
     drive_colab_tts_voice_dir = f"{drive_colab_tts_dir}/{voice}"
@@ -163,7 +166,6 @@ def load_my_voice(voice, reload = False):
                     shutil.copy(file_path, f'{drive_voice_files_dir}/{i}.wav')
         else:
             def button_click_func(*change):
-                print(change)
                 for i, file_data in enumerate(change[0]['owner'].data):
                     file_path = os.path.join(custom_voice_folder, f'{i}.wav')
                     with open(file_path, 'wb') as f:
