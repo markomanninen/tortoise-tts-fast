@@ -6,7 +6,7 @@ from pydub import AudioSegment
 from zipfile import ZipFile
 from glob import glob
 from numba import cuda
-import os, shutil
+import os, shutil, re
 import locale
 
 # can we use a mounted gdrive in colab environment for back ups?
@@ -16,6 +16,17 @@ is_colab = False
 # this is initialized by init function
 def getpreferredencoding(do_setlocale = True):
     return "UTF-8"
+
+def get_sentence_and_voiceid(sentence, voiceid):
+
+    # regular expression to match the voice tag
+    voice_regex = r"\[voice=(.*?)\]"
+
+    # find the voice tag in the sentence
+    voice_match = re.search(voice_regex, sentence)
+
+    # if a voice tag is found, extract the voice and remove it from the original sentence
+    return (re.sub(voice_regex, "", sentence).strip(), voice_match.group(1)) if voice_match else (sentence, voiceid)
 
 def list_voices():
     directory_list = list()
@@ -190,13 +201,11 @@ def text2speech(text, section_name, voice = "marko", preset = "fast", append_nex
     # and from google drive back-up dir
     if is_colab:
         remove_old_files(f'{drive_colab_tts_voice_dir}/generated-{voice}*.wav')
-    # load voice neural data
-    voice_samples, conditioning_latents = load_voice(voice)
-
-    # The first sentence seems to give a gradient warning,
-    # thus this line is just to get over it before actual speech generation
-    #tts.tts_with_preset("Dummy.", voice_samples=voice_samples, conditioning_latents=conditioning_latents, preset=preset)
-    #print()
+    
+    # load voice neural data to a dictionary that supports multiple voices in a text indicated by [voice=othervoice] placeholders.
+    # one per line however!
+    voices = {}
+    voices[voice] = load_voice(voice)
 
     # keep a count of skipped empty or error lines
     r = 0
@@ -222,6 +231,18 @@ def text2speech(text, section_name, voice = "marko", preset = "fast", append_nex
             add_silence = True
 
         try:
+            
+            t, v = get_sentence_and_voiceid(t, voice)
+            
+            if v not in voices:
+                try:
+                    voices[v] = load_voice(v)
+                except:
+                    print("Voice %S not found, using default: %s" % (v, voice))
+                    v = voice
+            
+            voice_samples, conditioning_latents = voices[v]
+            
             # append the next three words from the next row sentence to give a feeling of
             # continuation of the bigger context for the speech model
             # note that this requires post editing for the generated audio files
